@@ -30,6 +30,6 @@ class LoginUseCase(private val loginRepository: LoginRepository) {
         val result = loginRepository.login(username, password)
         emit(Resource.Success(result))
     }.catch { e ->
-        emit(Resource.Error(e.message.toString()))
+        emit(Resource.Error(e.message ?: "Unknown error occurred"))
     }
 }

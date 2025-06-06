@@ -19,6 +19,7 @@ import com.mifos.core.domain.useCases.LoginUseCase
 import com.mifos.core.domain.useCases.PasswordValidationUseCase
 import com.mifos.core.domain.useCases.UsernameValidationUseCase
 import com.mifos.core.model.getInstanceUrl
+import com.mifos.core.network.BaseApiManager
 import com.mifos.feature.auth.R
 import com.mifos.feature.auth.login.LoginUiState.ShowError
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,7 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.mifos.core.apimanager.BaseApiManager
+import org.openapitools.client.models.PostAuthenticationResponse
 import javax.inject.Inject
 
 /**
@@ -40,9 +41,10 @@ class LoginViewModel @Inject constructor(
     private val prefManager: PrefManager,
     private val usernameValidationUseCase: UsernameValidationUseCase,
     private val passwordValidationUseCase: PasswordValidationUseCase,
+    private val loginUseCase: com.mifos.core.domain.useCases.LoginUseCase,
     private val baseApiManager: BaseApiManager,
-    private val loginUseCase: LoginUseCase,
-) : ViewModel() {
+) :
+    ViewModel() {
 
     private val _loginUiState = MutableStateFlow<LoginUiState>(LoginUiState.Empty)
     val loginUiState = _loginUiState.asStateFlow()
@@ -67,6 +69,7 @@ class LoginViewModel @Inject constructor(
     }
 
     private fun setupPrefManger(username: String, password: String) {
+        // Check network connectivity and proceed with login
         if (Network.isOnline(context)) {
             login(username, password)
         } else {
@@ -92,13 +95,7 @@ class LoginViewModel @Inject constructor(
                             // Saving username password
                             prefManager.usernamePassword = Pair(username, password)
                             // Updating Services
-                            baseApiManager.createService(
-                                username = username,
-                                password = password,
-                                baseUrl = prefManager.serverConfig.getInstanceUrl().dropLast(3),
-                                tenant = prefManager.serverConfig.tenant,
-                                secured = true,
-                            )
+                            BaseApiManager.createService(prefManager)
                             _loginUiState.value = LoginUiState.Success
                         } else {
                             _loginUiState.value =

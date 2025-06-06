@@ -29,6 +29,6 @@ class DataManagerAuth @Inject constructor(
      */
     suspend fun login(username: String, password: String): PostAuthenticationResponse {
         val body = PostAuthenticationRequest(username = username, password = password)
-        return baseApiManager.authApi.authenticate(body)
+        return baseApiManager.authApi.authenticate(body, true)
     }
 }

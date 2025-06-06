@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Mifos Initiative
+ * Copyright 2024 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -13,10 +13,16 @@ import org.openapitools.client.models.PostAuthenticationRequest
 import org.openapitools.client.models.PostAuthenticationResponse
 import retrofit2.http.Body
 import retrofit2.http.POST
+import retrofit2.http.Query
 
+/**
+ * Authentication service for login functionality
+ */
 interface AuthService {
+    
     @POST("authentication")
     suspend fun authenticate(
-        @Body postAuthenticationRequest: PostAuthenticationRequest,
+        @Body authenticationRequest: PostAuthenticationRequest,
+        @Query("tenantIdentifier") tenantIdentifier: Boolean = true
     ): PostAuthenticationResponse
-}
+} 
