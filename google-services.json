@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "985652445527",
+    "project_id": "ignite-fin",
+    "storage_bucket": "ignite-fin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:985652445527:android:83b96fa236cde67b8d7e12",
+        "android_client_info": {
+          "package_name": "com.mifos.mifosxdroid.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQ370Ia8H1q9gtK_-QsnLQApwbxU_eACo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

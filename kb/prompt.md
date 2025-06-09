@@ -71,9 +71,9 @@ After any changes, verify against:
 - **Background Sync**: WorkManager for network-available data synchronization
 
 ### FORK-SPECIFIC RULES
-- **Module Namespace**: Use `org.mifos.mobile.custom.*` for all new packages
-- **Feature Modules**: Create in `/feature-custom/` directory structure
-- **Database Schema**: Prefix custom tables with `custom_` to avoid conflicts
+- **Module Namespace**: Use `org.mifos.mobile.extend.*` for all new packages
+- **Feature Modules**: Create in `/feature-extend/` directory structure
+- **Database Schema**: Prefix custom tables with `m_extend_` to avoid conflicts
 - **Navigation**: Use separate nav graphs for custom features
 - **Resources**: Custom resources in separate resource directories
 - **Documentation**: All custom features documented separately

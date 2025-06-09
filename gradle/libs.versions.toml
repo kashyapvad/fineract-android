@@ -55,6 +55,7 @@ fineractClientVersion = "0.0.1"
 firebaseBom = "32.7.3"
 firebaseCrashlyticsPlugin = "2.9.9"
 firebasePerfPlugin = "1.4.2"
+firebaseAppDistribution = "5.0.0"
 fliptables = "1.0.1"
 glide = "4.15.1"
 gmsPlugin = "4.4.2"
@@ -409,6 +410,7 @@ androidx-benchmark = { id = "androidx.benchmark", version.ref = "androidxBenchma
 androidx-navigation = {id = "androidx.navigation.safeargs", version.ref = "androidxNavigation"}
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
 firebase-perf = { id = "com.google.firebase.firebase-perf", version.ref = "firebasePerfPlugin" }
+firebase-appdistribution = { id = "com.google.firebase.appdistribution", version.ref = "firebaseAppDistribution" }
 gms = { id = "com.google.gms.google-services", version.ref = "gmsPlugin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

@@ -1,0 +1,20 @@
+🚀 Mifos Android App - Pilot Release
+
+✨ New Features:
+- Multi-tenant support for different MFIs
+- Enhanced client management
+- Improved loan processing
+- Offline data synchronization
+
+🐛 Bug Fixes:
+- Performance improvements
+- UI/UX enhancements
+- Stability fixes
+
+📱 For Pilot Testing:
+This build is specifically for pilot MFI testing. Please report any issues or feedback.
+
+🔧 Build Info:
+- Version: Latest development build
+- Environment: Pilot/Demo
+- Target: Field officers and MFI staff

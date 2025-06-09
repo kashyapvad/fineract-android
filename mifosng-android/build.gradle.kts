@@ -19,6 +19,7 @@ plugins {
     alias(libs.plugins.secrets)
     alias(libs.plugins.androidx.navigation)
     alias(libs.plugins.gms)
+    alias(libs.plugins.firebase.appdistribution)
 }
 
 android {
@@ -49,6 +50,12 @@ android {
         debug {
             isMinifyEnabled = false
             applicationIdSuffix = MifosBuildType.DEBUG.applicationIdSuffix
+            
+            // Firebase App Distribution configuration for debug builds
+            configure<com.google.firebase.appdistribution.gradle.AppDistributionExtension> {
+                groups = "pilot-testers"
+                releaseNotesFile = "../release-notes.txt"
+            }
         }
 
         // TODO:: Fix the proguard rules for release build
@@ -62,6 +69,12 @@ android {
                 getDefaultProguardFile("proguard-android.txt"),
                 "proguardTest-rules.pro",
             )
+            
+            // Firebase App Distribution configuration for release builds
+            configure<com.google.firebase.appdistribution.gradle.AppDistributionExtension> {
+                groups = "pilot-testers"
+                releaseNotesFile = "../release-notes.txt"
+            }
         }
     }
 
