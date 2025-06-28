@@ -61,6 +61,7 @@ import com.mifos.core.objects.PaymentTypeOption
 import com.mifos.core.objects.accounts.savings.SavingsAccountTransactionRequest
 import com.mifos.core.ui.components.MifosEmptyUi
 import com.mifos.feature.offline.R
+import com.mifos.feature.offline.extend.components.OfflineModeDialog
 
 @Composable
 internal fun SyncSavingsAccountTransactionScreenRoute(
@@ -121,7 +122,7 @@ internal fun SyncSavingsAccountTransactionScreen(
                             syncSavingsAccountTransactions,
                         )
 
-                        true -> TODO() // Implement OfflineModeDialog()
+                        true -> OfflineModeDialog.showOfflineToast(context)
                     }
                 },
             ) {

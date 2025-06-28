@@ -9,6 +9,7 @@
  */
 package com.mifos.core.network.datamanager
 
+import com.mifos.core.datastore.PrefManager
 import com.mifos.core.network.BaseApiManager
 import com.mifos.core.objects.organisation.Office
 import javax.inject.Inject
@@ -24,11 +25,27 @@ import javax.inject.Singleton
 @Singleton
 class DataManagerOffices @Inject constructor(
     private val baseApiManager: BaseApiManager,
+    private val prefManager: PrefManager,
 ) {
     /**
-     * return all List of Offices from DatabaseHelperOffices
+     * return all List of Offices, with offline mode support
      */
     suspend fun offices(): List<Office> {
-        return baseApiManager.officeApi.allOffices()
+        return when (prefManager.userStatus) {
+            false -> {
+                // Online mode - fetch from server
+                try {
+                    baseApiManager.officeApi.allOffices()
+                } catch (e: Exception) {
+                    // If network fails, return empty list to allow offline creation
+                    emptyList()
+                }
+            }
+            true -> {
+                // Offline mode - return empty list to allow offline client creation
+                // In offline mode, office selection will show "Office data not available (Offline mode)"
+                emptyList()
+            }
+        }
     }
 }

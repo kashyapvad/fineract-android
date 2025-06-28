@@ -30,6 +30,9 @@ import com.mifos.feature.client.clientSignature.SignatureScreen
 import com.mifos.feature.client.clientSurveyList.SurveyListScreen
 import com.mifos.feature.client.clientSurveyQuestion.SurveyQuestionScreen
 import com.mifos.feature.client.createNewClient.CreateNewClientScreen
+import com.mifos.feature.client.extend.ClientMenuExtension
+import com.mifos.feature.client.extend.kyc.navigation.addKycRoutes
+import com.mifos.feature.client.extend.kyc.navigation.isKycRoute
 import com.mifos.feature.dataTable.dataTableList.FormWidget
 import kotlin.reflect.KFunction4
 
@@ -44,9 +47,12 @@ fun NavGraphBuilder.clientNavGraph(
     loanAccountSelected: (Int) -> Unit,
     savingsAccountSelected: (Int, DepositType) -> Unit,
     activateClient: (Int) -> Unit,
+    extensions: Set<ClientMenuExtension> = emptySet(),
     hasDatatables: KFunction4<List<DataTable>, Any?, Int, MutableList<List<FormWidget>>, Unit>,
     onDocumentClicked: (Int, String) -> Unit,
     onCardClicked: (Int, List<Survey>) -> Unit,
+    onNavigateToKyc: (String, Int) -> Unit = { _, _ -> },
+    onOfflineClientSelect: (Int) -> Unit = { },
 ) {
     navigation(
         startDestination = ClientScreens.ClientListScreen.route,
@@ -55,6 +61,7 @@ fun NavGraphBuilder.clientNavGraph(
         clientListScreenRoute(
             paddingValues = paddingValues,
             onClientSelect = navController::navigateClientDetailsScreen,
+            onOfflineClientSelect = onOfflineClientSelect,
             createNewClient = navController::navigateCreateClientScreen,
         )
         clientDetailRoute(
@@ -72,6 +79,8 @@ fun NavGraphBuilder.clientNavGraph(
             loanAccountSelected = loanAccountSelected,
             savingsAccountSelected = savingsAccountSelected,
             activateClient = activateClient,
+            extensions = extensions,
+            onNavigateToKyc = onNavigateToKyc,
         )
         clientChargesRoute(
             onBackPressed = navController::popBackStack,
@@ -97,12 +106,19 @@ fun NavGraphBuilder.clientNavGraph(
             onBackPressed = navController::popBackStack,
             hasDatatables = hasDatatables,
         )
+
+        // Add KYC routes - extension functionality with minimal upstream changes
+        addKycRoutes(
+            navController = navController,
+            onBackPressed = navController::popBackStack
+        )
     }
 }
 
 fun NavGraphBuilder.clientListScreenRoute(
     paddingValues: PaddingValues,
     onClientSelect: (Int) -> Unit,
+    onOfflineClientSelect: (Int) -> Unit = onClientSelect,
     createNewClient: () -> Unit,
 ) {
     composable(
@@ -112,6 +128,7 @@ fun NavGraphBuilder.clientListScreenRoute(
             paddingValues = paddingValues,
             createNewClient = createNewClient,
             onClientSelect = onClientSelect,
+            onOfflineClientSelect = onOfflineClientSelect,
         )
     }
 }
@@ -131,11 +148,14 @@ fun NavGraphBuilder.clientDetailRoute(
     loanAccountSelected: (Int) -> Unit,
     savingsAccountSelected: (Int, DepositType) -> Unit,
     activateClient: (Int) -> Unit,
+    extensions: Set<ClientMenuExtension> = emptySet(),
+    onExtensionMenuClick: (String, Int) -> Unit = { _, _ -> },
+    onNavigateToKyc: (String, Int) -> Unit = { _, _ -> },
 ) {
     composable(
         route = ClientScreens.ClientDetailScreen.route,
         arguments = listOf(navArgument(Constants.CLIENT_ID, builder = { type = NavType.IntType })),
-    ) {
+    ) { backStackEntry ->
         ClientDetailsScreen(
             onBackPressed = onBackPressed,
             addLoanAccount = addLoanAccount,
@@ -151,6 +171,17 @@ fun NavGraphBuilder.clientDetailRoute(
             loanAccountSelected = loanAccountSelected,
             savingsAccountSelected = savingsAccountSelected,
             activateClient = activateClient,
+            extensions = extensions,
+            onExtensionMenuClick = { route, clientId ->
+                // First try KYC extension navigation
+                val handled = isKycRoute(route)
+                if (handled) {
+                    onNavigateToKyc(route, clientId)
+                } else {
+                    onExtensionMenuClick(route, clientId)
+                }
+            },
+            onNavigateToKyc = onNavigateToKyc,
         )
     }
 }

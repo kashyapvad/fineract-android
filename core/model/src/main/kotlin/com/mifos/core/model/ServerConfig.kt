@@ -24,16 +24,37 @@ data class ServerConfig(
     val tenant: String,
 ) : Parcelable {
     companion object {
-        val DEFAULT = ServerConfig(
-            protocol = "https://",
-            endPoint = "tt.mifos.community",
-            apiPath = "/fineract-provider/api/v1/",
-            port = "80",
-            tenant = "default",
-        )
+        val DEFAULT = try {
+            // Try to use the demo server config from BuildConfig if available
+            val buildConfigClass = Class.forName("com.mifos.core.common.BuildConfig")
+            val demoServerConfigField = buildConfigClass.getDeclaredField("DEMO_SERVER_CONFIG")
+            val demoServerConfigValue = demoServerConfigField.get(null) as String
+            
+            // Parse the JSON string and create ServerConfig
+            val jsonString = demoServerConfigValue.replace("'", "\"")
+            com.google.gson.Gson().fromJson(jsonString, ServerConfig::class.java)
+        } catch (e: Exception) {
+            // Fallback to hardcoded default if BuildConfig is not available or parsing fails
+            ServerConfig(
+                protocol = "https://",
+                endPoint = "tt.mifos.community",
+                apiPath = "/fineract-provider/api/v1/",
+                port = "80",
+                tenant = "default",
+            )
+        }
     }
 }
 
 fun ServerConfig.getInstanceUrl(): String {
-    return "$protocol$endPoint$apiPath"
+    val portSuffix = when {
+        // Don't include port for standard HTTP/HTTPS ports
+        (protocol == "http://" && port == "80") -> ""
+        (protocol == "https://" && port == "443") -> ""
+        // Don't include port if it's empty or default "80"
+        port.isBlank() || port == "80" && protocol == "https://" -> ""
+        // Include port for all other cases (like 8443, 8080, etc.)
+        else -> ":$port"
+    }
+    return "$protocol$endPoint$portSuffix$apiPath"
 }

@@ -38,4 +38,8 @@ object APIEndPoint {
     const val DISBURSE = "disburse"
     const val NOTES = "notes"
     const val MAKER_CHECKER = "makercheckers"
+    
+    // Extend API Endpoints
+    const val EXTEND_KYC = "extend/kyc"
+    const val EXTEND_GUARANTOR_KYC = "extend/guarantor-kyc"
 }

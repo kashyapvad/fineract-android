@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mifos.core.common.utils.Resource
 import com.mifos.core.data.repository.CreateNewClientRepository
+import com.mifos.core.data.services.extend.ClientCreationHelper
 import com.mifos.core.domain.useCases.ClientTemplateUseCase
 import com.mifos.core.domain.useCases.GetOfficeListUseCase
 import com.mifos.core.domain.useCases.GetStaffInOfficeForCreateNewClientUseCase
@@ -24,6 +25,7 @@ import com.mifos.core.objects.organisation.Staff
 import com.mifos.core.objects.templates.clients.AddressTemplate
 import com.mifos.core.objects.templates.clients.ClientsTemplate
 import com.mifos.feature.client.R
+import com.mifos.core.datastore.PrefManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,6 +52,8 @@ class CreateNewClientViewModel @Inject constructor(
     private val clientTemplateUseCase: ClientTemplateUseCase,
     private val getStaffInOffice: GetStaffInOfficeForCreateNewClientUseCase,
     private val getOfficeListUseCase: GetOfficeListUseCase,
+    private val clientCreationHelper: ClientCreationHelper,
+    private val prefManager: PrefManager,
 ) : ViewModel() {
 
     private val _createNewClientUiState =
@@ -80,9 +84,30 @@ class CreateNewClientViewModel @Inject constructor(
     private fun loadClientTemplate() = viewModelScope.launch(Dispatchers.IO) {
         clientTemplateUseCase().collect { result ->
             when (result) {
-                is Resource.Error ->
-                    _createNewClientUiState.value =
-                        CreateNewClientUiState.ShowError(R.string.feature_client_failed_to_fetch_client_template)
+                is Resource.Error -> {
+                    if (prefManager.userStatus) {
+                        // In offline mode, if no cached template is available, provide a basic default
+                        val defaultTemplate = ClientsTemplate(
+                            officeOptions = emptyList(),
+                            staffOptions = emptyList(),
+                            genderOptions = emptyList(),
+                            clientTypeOptions = emptyList(),
+                            clientClassificationOptions = emptyList()
+                        )
+                        _clientsTemplate.value = defaultTemplate
+                        loadAddressConfiguration()
+                        _createNewClientUiState.value =
+                            CreateNewClientUiState.ShowClientTemplate(
+                                defaultTemplate,
+                                isAddressEnabled = _isAddressEnabled.value,
+                                addressTemplate = _addressTemplate.value ?: AddressTemplate(),
+                            )
+                    } else {
+                        // In online mode, show the error
+                        _createNewClientUiState.value =
+                            CreateNewClientUiState.ShowError(R.string.feature_client_failed_to_fetch_client_template)
+                    }
+                }
 
                 is Resource.Loading -> Unit
 
@@ -106,8 +131,15 @@ class CreateNewClientViewModel @Inject constructor(
         getOfficeListUseCase().collect { result ->
             when (result) {
                 is Resource.Error -> {
-                    _createNewClientUiState.value =
-                        CreateNewClientUiState.ShowError(R.string.feature_client_failed_to_fetch_offices)
+                    // In offline mode, failing to load offices is expected
+                    // Don't show error, let the UI handle empty office list gracefully
+                    if (!prefManager.userStatus) {
+                        // Only show error if in online mode
+                        _createNewClientUiState.value =
+                            CreateNewClientUiState.ShowError(R.string.feature_client_failed_to_fetch_offices)
+                    }
+                    // In offline mode, offices will be empty and UI will show appropriate message
+                    _showOffices.value = emptyList()
                 }
 
                 is Resource.Loading -> {
@@ -162,21 +194,17 @@ class CreateNewClientViewModel @Inject constructor(
 
                     override fun onNext(client: Client?) {
                         if (client != null) {
-                            if (client.clientId != null) {
+                            if (client.clientId == null) {
+                                // Offline creation - show success message
+                                _createNewClientUiState.value = CreateNewClientUiState.ShowClientCreatedSuccessfully(R.string.feature_client_client_created_successfully)
+                            } else {
+                                // Online creation - post event for KYC sync and show success
+                                clientCreationHelper.notifyClientCreated(serverClientId = client.clientId!!, localClientId = null, source = "direct_creation")
+                                
                                 _createNewClientUiState.value =
                                     CreateNewClientUiState.ShowClientCreatedSuccessfully(R.string.feature_client_client_created_successfully)
 
-                                _createNewClientUiState.value = client.clientId?.let {
-                                    CreateNewClientUiState.SetClientId(
-                                        it,
-                                    )
-                                }!!
-                            } else {
-                                _createNewClientUiState.value = client.clientId?.let {
-                                    CreateNewClientUiState.ShowWaitingForCheckerApproval(
-                                        it,
-                                    )
-                                }!!
+                                _createNewClientUiState.value = CreateNewClientUiState.SetClientId(client.clientId!!)
                             }
                         }
                     }

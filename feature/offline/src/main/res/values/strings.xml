@@ -13,6 +13,7 @@
     <string name="feature_offline_offline_Sync">Offline Sync *</string>
     <string name="feature_offline_sync_loanRepayments">LoanRepayments</string>
     <string name="feature_offline_sync_clients">Clients</string>
+    <string name="feature_offline_sync_all_clients">Sync All</string>
     <string name="feature_offline_sync_centers">Centers</string>
     <string name="feature_offline_sync_savingsAccountTransactions">Sync Savings Account Transactions</string>
 
@@ -64,5 +65,20 @@
     <string name="feature_offline_sync_centers_payloads">Sync Centers Payloads</string>
     <string name="feature_offline_no_center_payload_to_sync">There is No Center Payload to Sync</string>
     <string name="feature_offline_no_loanrepayment_to_sync">No Loan Repayment to sync</string>
+
+    <string name="feature_offline_there_is_no_office_to_sync">There is no Office to sync</string>
+    <string name="feature_offline_error_in_syncing_office">Error in syncing Office</string>
+    <string name="feature_offline_office_successfully_synced">Office successfully synced</string>
+    <string name="feature_offline_office_required">Office (Required)</string>
+    <string name="feature_offline_gender_required">Gender (Required)</string>
+    <string name="feature_offline_gender_optional">Gender (Optional)</string>
+
+    <!-- Offline Mode Dialog Messages -->
+    <string name="feature_offline_offline_mode">Offline Mode</string>
+    <string name="feature_offline_offline_sync_alert">You are in offline mode. To sync data, please switch to online mode and ensure you have a working internet connection.</string>
+    <string name="feature_offline_offline_sync_message">Cannot sync data while in offline mode. Please go online first.</string>
+    <string name="feature_offline_ok">OK</string>
+    <string name="feature_offline_go_online">Go Online</string>
+    <string name="feature_offline_cancel">Cancel</string>
 
 </resources>

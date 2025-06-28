@@ -59,6 +59,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -111,7 +113,9 @@ private fun HomeNavigation(
     val route = navBackStackEntry?.destination?.route
     val isNavScreen = NavigationConstants.isNavScreen(route)
 
-    var offline by rememberSaveable { mutableStateOf(false) }
+    // Use ViewModel to manage offline state properly
+    val homeNavViewModel: HomeNavigationViewModel = hiltViewModel()
+    val offline by homeNavViewModel.userStatus.collectAsStateWithLifecycle()
 
     val navigationDrawerTabs = remember {
         listOf(
@@ -181,8 +185,8 @@ private fun HomeNavigation(
                             )
                             Switch(
                                 checked = offline,
-                                onCheckedChange = {
-                                    offline = it
+                                onCheckedChange = { isOffline ->
+                                    homeNavViewModel.updateUserStatus(isOffline)
                                 },
                             )
                         }

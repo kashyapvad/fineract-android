@@ -59,6 +59,12 @@ import com.mifos.feature.settings.navigation.navigateToUpdateServerConfig
 import com.mifos.feature.settings.navigation.settingsScreen
 import com.mifos.mifosxdroid.R
 import com.mifos.mifosxdroid.utils.MifosResponseHandler
+import com.mifos.feature.client.extend.ClientMenuExtension
+import com.mifos.feature.client.extend.kyc.ClientKycExtension
+import com.mifos.feature.client.extend.kyc.navigation.addKycRoutes
+import com.mifos.feature.client.extend.kyc.navigation.navigateToClientKyc
+import com.mifos.feature.client.extend.kyc.navigation.navigateToGuarantorKyc
+import com.mifos.feature.client.extend.kyc.navigation.navigateToOfflineClientOptions
 
 @Composable
 fun Navigation(
@@ -69,6 +75,9 @@ fun Navigation(
     onUpdateConfig: () -> Unit,
 ) {
     val context = LocalContext.current
+    
+    // Extensions - load KYC extensions
+    val extensions: Set<ClientMenuExtension> = setOf(ClientKycExtension())
 
     NavHost(
         navController = navController,
@@ -103,11 +112,27 @@ fun Navigation(
                     Constants.ACTIVATE_CLIENT,
                 )
             },
+            extensions = extensions, // Inject extensions with graceful fallback
             hasDatatables = navController::navigateDataTableList,
             onDocumentClicked = navController::navigateToDocumentListScreen,
             onCardClicked = { _, _ ->
                 // TODO:: Add Card Click
             },
+            onNavigateToKyc = { route, clientId ->
+                when (route) {
+                    "client_kyc" -> navController.navigateToClientKyc(clientId)
+                    "guarantor_kyc" -> navController.navigateToGuarantorKyc(clientId)
+                }
+            },
+            onOfflineClientSelect = { clientPayloadId ->
+                navController.navigateToOfflineClientOptions(clientPayloadId)
+            },
+        )
+
+        // KYC Navigation
+        addKycRoutes(
+            navController = navController,
+            onBackPressed = navController::popBackStack,
         )
 
         groupNavGraph(

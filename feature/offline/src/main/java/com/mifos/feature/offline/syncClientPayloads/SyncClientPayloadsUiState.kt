@@ -20,5 +20,8 @@ sealed class SyncClientPayloadsUiState {
 
     data class ShowError(val message: String) : SyncClientPayloadsUiState()
 
-    data class ShowPayloads(val clientPayloads: List<ClientPayload>) : SyncClientPayloadsUiState()
+    data class ShowPayloads(
+        val clientPayloads: List<ClientPayload>,
+        val extensionState: Any? = null  // Generic container for extension state
+    ) : SyncClientPayloadsUiState()
 }

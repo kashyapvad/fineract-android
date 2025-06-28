@@ -57,6 +57,7 @@ android {
             isDebuggable = false
             isShrinkResources = false
             applicationIdSuffix = MifosBuildType.RELEASE.applicationIdSuffix
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
             testProguardFiles(
                 getDefaultProguardFile("proguard-android.txt"),

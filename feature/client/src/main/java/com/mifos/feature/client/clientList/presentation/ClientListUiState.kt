@@ -11,6 +11,7 @@ package com.mifos.feature.client.clientList.presentation
 
 import androidx.paging.PagingData
 import com.mifos.core.objects.client.Client
+import com.mifos.core.objects.client.ClientPayload
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -25,4 +26,9 @@ sealed class ClientListUiState {
     data class ClientListApi(val list: Flow<PagingData<Client>>) : ClientListUiState()
 
     data class ClientListDb(val list: List<Client>) : ClientListUiState()
+    
+    data class ClientListDbWithPending(
+        val syncedClients: List<Client>,
+        val pendingClients: List<ClientPayload>
+    ) : ClientListUiState()
 }

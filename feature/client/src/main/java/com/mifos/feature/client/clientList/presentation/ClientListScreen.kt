@@ -88,7 +88,9 @@ import com.mifos.core.designsystem.theme.DarkGray
 import com.mifos.core.designsystem.theme.LightGray
 import com.mifos.core.designsystem.theme.White
 import com.mifos.core.objects.client.Client
+import com.mifos.core.objects.client.ClientPayload
 import com.mifos.feature.client.R
+import com.mifos.feature.client.extend.clientList.LazyColumnForClientListDbWithPending
 import com.mifos.feature.client.syncClientDialog.SyncClientsDialogScreen
 
 /**
@@ -100,6 +102,7 @@ internal fun ClientListScreen(
     paddingValues: PaddingValues,
     createNewClient: () -> Unit,
     onClientSelect: (Int) -> Unit,
+    onOfflineClientSelect: (Int) -> Unit = onClientSelect, // Default to same behavior
     viewModel: ClientListViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(key1 = true) {
@@ -170,6 +173,19 @@ internal fun ClientListScreen(
 
                     is ClientListUiState.ClientListDb -> {
                         LazyColumnForClientListDb(clientList = state.list)
+                    }
+                    
+                    is ClientListUiState.ClientListDbWithPending -> {
+                        LazyColumnForClientListDbWithPending(
+                            syncedClients = state.syncedClients,
+                            pendingClients = state.pendingClients,
+                            onClientClick = { clientId ->
+                                onClientSelect(clientId)
+                            },
+                            onOfflineClientClick = { clientId ->
+                                onOfflineClientSelect(clientId)
+                            }
+                        )
                     }
 
                     ClientListUiState.Empty -> {
@@ -540,3 +556,5 @@ private fun LazyColumnForClientListDbPreview() {
 
     LazyColumnForClientListDb(clientList = clientList)
 }
+
+

@@ -63,6 +63,7 @@ import com.mifos.core.objects.PaymentTypeOption
 import com.mifos.core.objects.accounts.loan.LoanRepaymentRequest
 import com.mifos.feature.offline.R
 import com.mifos.feature.offline.syncSavingsAccountTransaction.getPaymentTypeName
+import com.mifos.feature.offline.extend.components.OfflineModeDialog
 
 @Composable
 internal fun SyncLoanRepaymentTransactionScreenRoute(
@@ -121,7 +122,7 @@ internal fun SyncLoanRepaymentTransactionScreen(
                             syncLoanRepaymentTransactions,
                         )
 
-                        true -> TODO("Implement OfflineModeDialog()")
+                        true -> OfflineModeDialog.showOfflineToast(context)
                     }
                 },
             ) {

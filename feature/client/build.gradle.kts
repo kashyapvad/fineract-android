@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.mifos.android.feature)
     alias(libs.plugins.mifos.android.library.compose)
     alias(libs.plugins.mifos.android.library.jacoco)
+    id("kotlin-parcelize")
 }
 
 android {

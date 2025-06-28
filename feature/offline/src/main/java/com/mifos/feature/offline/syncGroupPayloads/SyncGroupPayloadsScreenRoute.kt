@@ -51,6 +51,7 @@ import com.mifos.core.designsystem.component.MifosScaffold
 import com.mifos.core.designsystem.icon.MifosIcons
 import com.mifos.core.objects.group.GroupPayload
 import com.mifos.feature.offline.R
+import com.mifos.feature.offline.extend.components.OfflineModeDialog
 
 @Composable
 internal fun SyncGroupPayloadsScreenRoute(
@@ -110,7 +111,7 @@ internal fun SyncGroupPayloadsScreen(
                             syncGroupPayloads = syncGroupPayloads,
                         )
 
-                        true -> TODO("Implement OfflineModeDialog()")
+                        true -> OfflineModeDialog.showOfflineToast(context)
                     }
                 },
             ) {

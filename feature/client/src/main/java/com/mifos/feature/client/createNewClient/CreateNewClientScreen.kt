@@ -602,37 +602,65 @@ private fun CreateNewClientContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        MifosTextFieldDropdown(
-            value = selectedOffice,
-            onValueChanged = { selectedOffice = it },
-            onOptionSelected = { index, value ->
-                selectedOffice = value
-                selectedOfficeId = officeList[index].id
+        // Office selection - handle empty list gracefully
+        if (officeList.isNotEmpty()) {
+            MifosTextFieldDropdown(
+                value = selectedOffice,
+                onValueChanged = { selectedOffice = it },
+                onOptionSelected = { index, value ->
+                    selectedOffice = value
+                    selectedOfficeId = officeList[index].id
 
-                if (selectedOfficeId != null) {
-                    scope.launch {
-                        loadStaffInOffice.invoke(selectedOfficeId!!)
+                    if (selectedOfficeId != null) {
+                        scope.launch {
+                            loadStaffInOffice.invoke(selectedOfficeId!!)
+                        }
                     }
-                }
-            },
-            label = R.string.feature_client_office_name_mandatory,
-            options = officeList.sortedBy { it.name }.map { it.name.toString() },
-            readOnly = true,
-        )
+                },
+                label = R.string.feature_client_office_name_mandatory,
+                options = officeList.sortedBy { it.name }.map { it.name.toString() },
+                readOnly = true,
+            )
+        } else {
+            // Show offline message when office list is empty
+            MifosOutlinedTextField(
+                value = stringResource(id = R.string.feature_client_offline_office_not_available),
+                onValueChange = { },
+                label = stringResource(id = R.string.feature_client_office_name_mandatory),
+                readOnly = true,
+                enabled = false,
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        MifosTextFieldDropdown(
-            value = staff,
-            onValueChanged = { staff = it },
-            onOptionSelected = { index, value ->
-                staff = value
-                selectedStaffId = staffInOffices[index].id
-            },
-            label = R.string.feature_client_staff,
-            options = staffInOffices.sortedBy { it.displayName }.map { it.displayName.toString() },
-            readOnly = true,
-        )
+        // Staff selection - handle empty list gracefully
+        if (staffInOffices.isNotEmpty()) {
+            MifosTextFieldDropdown(
+                value = staff,
+                onValueChanged = { staff = it },
+                onOptionSelected = { index, value ->
+                    staff = value
+                    selectedStaffId = staffInOffices[index].id
+                },
+                label = R.string.feature_client_staff,
+                options = staffInOffices.sortedBy { it.displayName }.map { it.displayName.toString() },
+                readOnly = true,
+            )
+        } else {
+            // Show message when staff list is empty
+            MifosOutlinedTextField(
+                value = if (officeList.isEmpty()) {
+                    stringResource(id = R.string.feature_client_offline_staff_not_available)
+                } else {
+                    stringResource(id = R.string.feature_client_no_staff_associated_with_office)
+                },
+                onValueChange = { },
+                label = stringResource(id = R.string.feature_client_staff),
+                readOnly = true,
+                enabled = false,
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -748,14 +776,8 @@ private fun handleSubmitClick(
         return
     }
 
-    if (!Network.isOnline(context)) {
-        Toast.makeText(
-            context,
-            context.resources.getString(R.string.feature_client_error_not_connected_internet),
-            Toast.LENGTH_SHORT,
-        ).show()
-        return
-    }
+    // Allow offline client creation - DataManagerClient handles online/offline logic
+    // Network check removed to enable offline-first functionality
 
     val clientPayload = createClientPayload(
         clientNames.firstName, clientNames.lastName, selectedOfficeId, staffInOffices, isActive,

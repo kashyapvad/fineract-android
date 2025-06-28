@@ -10,15 +10,16 @@
 package com.mifos.feature.offline.syncClientPayloads
 
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.ExperimentalMaterialApi
@@ -31,7 +32,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -50,18 +50,23 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.mifos.core.common.utils.Network
 import com.mifos.core.designsystem.component.MifosCircularProgress
 import com.mifos.core.designsystem.component.MifosScaffold
 import com.mifos.core.designsystem.icon.MifosIcons
 import com.mifos.core.objects.client.ClientPayload
 import com.mifos.feature.offline.R
+import com.mifos.feature.offline.extend.clientSync.SyncClientExtensionService
+import com.mifos.feature.offline.extend.components.IndividualSyncButton
+import com.mifos.feature.offline.extend.utils.NetworkUtils
+import com.mifos.feature.offline.extend.components.OfflineModeDialog
+import javax.inject.Inject
 
 @Composable
 internal fun SyncClientPayloadsScreenRoute(
     viewModel: SyncClientPayloadsViewModel = hiltViewModel(),
     onBackPressed: () -> Unit,
 ) {
+    val extensionService = remember { SyncClientExtensionService() }
     val uiState by viewModel.syncClientPayloadsUiState.collectAsStateWithLifecycle()
     val refreshState by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
@@ -79,7 +84,11 @@ internal fun SyncClientPayloadsScreenRoute(
         syncClientPayloads = {
             viewModel.syncClientPayload()
         },
+        syncIndividualClient = { payload ->
+            viewModel.syncIndividualClient(payload)
+        },
         userStatus = viewModel.getUserStatus(),
+        extensionService = extensionService,
     )
 }
 
@@ -91,7 +100,9 @@ internal fun SyncClientPayloadsScreen(
     refreshState: Boolean,
     onRefresh: () -> Unit,
     syncClientPayloads: () -> Unit,
+    syncIndividualClient: (ClientPayload) -> Unit,
     userStatus: Boolean,
+    extensionService: SyncClientExtensionService,
     modifier: Modifier = Modifier,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -99,51 +110,87 @@ internal fun SyncClientPayloadsScreen(
     val pullRefreshState =
         rememberPullRefreshState(refreshing = refreshState, onRefresh = onRefresh)
 
+    // Update extension service with current payloads
+    LaunchedEffect(uiState) {
+        if (uiState is SyncClientPayloadsUiState.ShowPayloads) {
+            extensionService.updatePayloads(uiState.clientPayloads)
+        }
+    }
+
     MifosScaffold(
         modifier = modifier,
         icon = MifosIcons.arrowBack,
         title = stringResource(id = R.string.feature_offline_sync_clients_payloads),
         onBackPressed = onBackPressed,
         actions = {
-            IconButton(
+            Button(
                 onClick = {
                     when (userStatus) {
-                        false -> checkNetworkConnectionAndSync(context, syncClientPayloads)
-                        true -> TODO("Implement OfflineModeDialog()")
+                        false -> {
+                            extensionService.handleMainSyncClick(
+                                onShowValidation = { /* Extension handles this */ },
+                                onDirectSync = { NetworkUtils.checkNetworkAndExecute(context, syncClientPayloads) }
+                            )
+                        }
+                        true -> OfflineModeDialog.showOfflineToast(context)
                     }
                 },
             ) {
                 Icon(
                     MifosIcons.sync,
-                    contentDescription = stringResource(id = R.string.feature_offline_sync_clients),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
                 )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(stringResource(id = R.string.feature_offline_sync_all_clients))
             }
         },
         snackbarHostState = snackbarHostState,
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .padding(paddingValues)
-                .pullRefresh(pullRefreshState),
-        ) {
-            when (uiState) {
-                is SyncClientPayloadsUiState.ShowProgressbar -> {
-                    MifosCircularProgress()
-                }
+        // Extension validation screen - shown when needed
+        extensionService.ExtensionValidationScreenWrapper(
+            onRefresh = onRefresh
+        )
 
-                is SyncClientPayloadsUiState.ShowError -> {
-                    ErrorStateScreen(uiState.message, onRefresh)
-                }
+        // Main screen content
+        if (!extensionService.showExtensionScreen) {
+            Box(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .pullRefresh(pullRefreshState),
+            ) {
+                when (uiState) {
+                    is SyncClientPayloadsUiState.ShowProgressbar -> {
+                        MifosCircularProgress()
+                    }
 
-                is SyncClientPayloadsUiState.ShowPayloads -> {
-                    ClientPayloadsList(uiState.clientPayloads)
+                    is SyncClientPayloadsUiState.ShowError -> {
+                        ErrorStateScreen(uiState.message, onRefresh)
+                    }
+
+                    is SyncClientPayloadsUiState.ShowPayloads -> {
+                        ClientPayloadsList(
+                            clientPayloads = uiState.clientPayloads,
+                            onSyncClick = { payload ->
+                                extensionService.handleIndividualSyncClick(
+                                    payload = payload,
+                                    onShowValidation = { /* Extension handles this */ },
+                                    onDirectSync = { p -> 
+                                        NetworkUtils.checkNetworkAndExecute(context) { 
+                                            syncIndividualClient(p) 
+                                        } 
+                                    }
+                                )
+                            }
+                        )
+                    }
                 }
+                PullRefreshIndicator(
+                    refreshing = refreshState,
+                    state = pullRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
             }
-            PullRefreshIndicator(
-                refreshing = refreshState,
-                state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter),
-            )
         }
     }
 }
@@ -151,11 +198,15 @@ internal fun SyncClientPayloadsScreen(
 @Composable
 private fun ClientPayloadsList(
     clientPayloads: List<ClientPayload>,
+    onSyncClick: ((ClientPayload) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier = modifier) {
         items(clientPayloads) { payload ->
-            ClientPayloadItem(payload)
+            ClientPayloadItem(
+                payload = payload,
+                onSyncClick = onSyncClick
+            )
         }
     }
 }
@@ -163,6 +214,7 @@ private fun ClientPayloadsList(
 @Composable
 private fun ClientPayloadItem(
     payload: ClientPayload,
+    onSyncClick: ((ClientPayload) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -172,6 +224,11 @@ private fun ClientPayloadItem(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "${payload.firstname} ${payload.lastname}",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            
             val payloadStatus: String = if (payload.active == true) {
                 "true"
             } else {
@@ -226,6 +283,14 @@ private fun ClientPayloadItem(
                 payload.activationDate ?: "",
             )
             PayloadField(stringResource(id = R.string.feature_offline_active), payloadStatus)
+
+            if (onSyncClick != null) {
+                IndividualSyncButton(
+                    syncStatus = null, // Extension service manages the status
+                    onClick = { onSyncClick(payload) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             if (payload.errorMessage != null) {
                 Text(
@@ -287,20 +352,7 @@ private fun ErrorStateScreen(
     }
 }
 
-private fun checkNetworkConnectionAndSync(
-    context: Context,
-    syncClientPayloads: () -> Unit,
-) {
-    if (Network.isOnline(context)) {
-        syncClientPayloads()
-    } else {
-        Toast.makeText(
-            context,
-            context.getString(R.string.feature_offline_error_not_connected_internet),
-            Toast.LENGTH_SHORT,
-        ).show()
-    }
-}
+// Network check functions removed - replaced with NetworkUtils.checkNetworkAndExecute()
 
 class SyncClientPayloadsUiStateProvider : PreviewParameterProvider<SyncClientPayloadsUiState> {
     override val values = sequenceOf(
@@ -321,7 +373,9 @@ private fun SyncClientPayloadsScreenPreview(
         refreshState = false,
         onRefresh = {},
         syncClientPayloads = {},
+        syncIndividualClient = {},
         userStatus = true,
+        extensionService = SyncClientExtensionService(),
     )
 }
 

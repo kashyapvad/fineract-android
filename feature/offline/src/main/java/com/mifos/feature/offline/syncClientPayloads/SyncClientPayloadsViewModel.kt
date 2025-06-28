@@ -44,6 +44,9 @@ class SyncClientPayloadsViewModel @Inject constructor(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
     private var mClientPayloads: MutableList<ClientPayload> = mutableListOf()
     private var mClientSyncIndex = 0
 
@@ -72,7 +75,10 @@ class SyncClientPayloadsViewModel @Inject constructor(
                 override fun onNext(clientPayloads: List<ClientPayload>) {
                     mClientPayloads = clientPayloads.toMutableList()
                     _syncClientPayloadsUiState.value =
-                        SyncClientPayloadsUiState.ShowPayloads(mClientPayloads)
+                        SyncClientPayloadsUiState.ShowPayloads(
+                            clientPayloads = mClientPayloads,
+                            extensionState = null
+                        )
                 }
             })
     }
@@ -85,6 +91,8 @@ class SyncClientPayloadsViewModel @Inject constructor(
             .subscribe(object : Observer<Client> {
                 override fun onCompleted() {}
                 override fun onError(e: Throwable) {
+                    Log.e(LOG_TAG, "Client sync failed", e)
+                    _isSyncing.value = false
                     _syncClientPayloadsUiState.value =
                         SyncClientPayloadsUiState.ShowError(e.message.toString())
                     updateClientPayload(clientPayload)
@@ -111,6 +119,7 @@ class SyncClientPayloadsViewModel @Inject constructor(
             .subscribe(object : Observer<List<ClientPayload>> {
                 override fun onCompleted() {}
                 override fun onError(e: Throwable) {
+                    _isSyncing.value = false
                     _syncClientPayloadsUiState.value =
                         SyncClientPayloadsUiState.ShowError(e.message.toString())
                 }
@@ -122,7 +131,10 @@ class SyncClientPayloadsViewModel @Inject constructor(
                     }
                     mClientPayloads = clientPayloads.toMutableList()
                     _syncClientPayloadsUiState.value =
-                        SyncClientPayloadsUiState.ShowPayloads(mClientPayloads)
+                        SyncClientPayloadsUiState.ShowPayloads(
+                            clientPayloads = mClientPayloads,
+                            extensionState = null
+                        )
                 }
             })
     }
@@ -135,6 +147,7 @@ class SyncClientPayloadsViewModel @Inject constructor(
             .subscribe(object : Subscriber<ClientPayload>() {
                 override fun onCompleted() {}
                 override fun onError(e: Throwable) {
+                    _isSyncing.value = false
                     _syncClientPayloadsUiState.value =
                         SyncClientPayloadsUiState.ShowError(e.message.toString())
                 }
@@ -165,4 +178,11 @@ class SyncClientPayloadsViewModel @Inject constructor(
             }
         }
     }
+
+    // Delegate individual sync to extension bridge
+    fun syncIndividualClient(payload: ClientPayload) {
+        // Extension will handle individual sync through the extension service
+        // This method serves as a bridge for the screen to call
+    }
+
 }

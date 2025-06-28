@@ -359,7 +359,13 @@ class DatabaseHelperClient @Inject constructor() {
                     }
             }
             clientPayload.save()
-            Observable.just(Client())
+            
+            // Return Client object with actual database ID for proper offline tracking
+            val client = Client().apply {
+                id = clientPayload.id ?: 0  // This is the unique auto-incremented database ID
+                // Keep clientId as null to indicate offline creation
+            }
+            Observable.just(client)
         }
     }
 

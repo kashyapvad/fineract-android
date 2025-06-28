@@ -52,6 +52,7 @@ import com.mifos.core.designsystem.component.MifosSweetError
 import com.mifos.core.designsystem.icon.MifosIcons
 import com.mifos.core.ui.components.MifosEmptyUi
 import com.mifos.feature.offline.R
+import com.mifos.feature.offline.extend.components.OfflineModeDialog
 
 @Composable
 internal fun SyncCenterPayloadsScreenRoute(
@@ -100,7 +101,7 @@ internal fun SyncCenterPayloadsScreen(
                 onClick = {
                     when (userStatus) {
                         false -> checkNetworkConnectionAndSync(context, syncCenterPayloads)
-                        true -> TODO("Implement OfflineModeDialog()")
+                        true -> OfflineModeDialog.showOfflineToast(context)
                     }
                 },
             ) {
