@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mifos.core.common.utils.Resource
 import com.mifos.core.data.repository.CreateNewClientRepository
+import com.mifos.core.data.services.extend.ClientCreationHelper
 import com.mifos.core.domain.useCases.ClientTemplateUseCase
 import com.mifos.core.domain.useCases.GetOfficeListUseCase
 import com.mifos.core.domain.useCases.GetStaffInOfficeForCreateNewClientUseCase
@@ -50,6 +51,7 @@ class CreateNewClientViewModel @Inject constructor(
     private val clientTemplateUseCase: ClientTemplateUseCase,
     private val getStaffInOffice: GetStaffInOfficeForCreateNewClientUseCase,
     private val getOfficeListUseCase: GetOfficeListUseCase,
+    private val clientCreationHelper: ClientCreationHelper,
 ) : ViewModel() {
 
     private val _createNewClientUiState =
@@ -162,21 +164,17 @@ class CreateNewClientViewModel @Inject constructor(
 
                     override fun onNext(client: Client?) {
                         if (client != null) {
-                            if (client.clientId != null) {
+                            if (client.clientId == null) {
+                                // Offline creation - show success message
+                                _createNewClientUiState.value = CreateNewClientUiState.ShowClientCreatedSuccessfully(R.string.feature_client_client_created_successfully)
+                            } else {
+                                // Online creation - post event for KYC sync and show success
+                                clientCreationHelper.notifyClientCreated(serverClientId = client.clientId!!, localClientId = null, source = "direct_creation")
+                                
                                 _createNewClientUiState.value =
                                     CreateNewClientUiState.ShowClientCreatedSuccessfully(R.string.feature_client_client_created_successfully)
 
-                                _createNewClientUiState.value = client.clientId?.let {
-                                    CreateNewClientUiState.SetClientId(
-                                        it,
-                                    )
-                                }!!
-                            } else {
-                                _createNewClientUiState.value = client.clientId?.let {
-                                    CreateNewClientUiState.ShowWaitingForCheckerApproval(
-                                        it,
-                                    )
-                                }!!
+                                _createNewClientUiState.value = CreateNewClientUiState.SetClientId(client.clientId!!)
                             }
                         }
                     }

@@ -35,5 +35,14 @@ data class ServerConfig(
 }
 
 fun ServerConfig.getInstanceUrl(): String {
-    return "$protocol$endPoint$apiPath"
+    val portSuffix = when {
+        // Don't include port for standard HTTP/HTTPS ports
+        (protocol == "http://" && port == "80") -> ""
+        (protocol == "https://" && port == "443") -> ""
+        // Don't include port if it's empty or default "80"
+        port.isBlank() || port == "80" && protocol == "https://" -> ""
+        // Include port for all other cases (like 8443, 8080, etc.)
+        else -> ":$port"
+    }
+    return "$protocol$endPoint$portSuffix$apiPath"
 }

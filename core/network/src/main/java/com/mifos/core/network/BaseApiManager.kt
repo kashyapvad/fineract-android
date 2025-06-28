@@ -31,6 +31,7 @@ import com.mifos.core.network.services.SavingsAccountService
 import com.mifos.core.network.services.SearchService
 import com.mifos.core.network.services.StaffService
 import com.mifos.core.network.services.SurveyService
+import com.mifos.core.network.services.extend.KycService
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import org.mifos.core.utils.JsonDateSerializer
@@ -88,6 +89,9 @@ class BaseApiManager @Inject constructor(
         get() = Companion.runReportsService
     val authApi: AuthService
         get() = Companion.authApi
+    val kycApi: KycService
+        get() = Companion.kycApi
+
 
     companion object {
         private var mRetrofit: Retrofit? = null
@@ -109,6 +113,7 @@ class BaseApiManager @Inject constructor(
         private lateinit var collectionSheetApi: CollectionSheetService
         private lateinit var checkerInboxApi: CheckerInboxService
         private lateinit var authApi: AuthService
+        private lateinit var kycApi: KycService
 
         fun init() {
             centerApi = createApi(CenterService::class.java)
@@ -129,6 +134,7 @@ class BaseApiManager @Inject constructor(
             collectionSheetApi = createApi(CollectionSheetService::class.java)
             checkerInboxApi = createApi(CheckerInboxService::class.java)
             authApi = createApi(AuthService::class.java)
+            kycApi = createApi(KycService::class.java)
         }
 
         private fun <T> createApi(clazz: Class<T>): T {
@@ -138,7 +144,9 @@ class BaseApiManager @Inject constructor(
         fun createService(prefManager: PrefManager) {
             val gson = GsonBuilder()
                 .disableHtmlEscaping()
-                .registerTypeAdapter(Date::class.java, JsonDateSerializer()).create()
+                .registerTypeAdapter(Date::class.java, JsonDateSerializer())
+                .registerTypeAdapter(String::class.java, com.mifos.core.network.adapter.DateArrayDeserializer())
+                .create()
             val json = Json { ignoreUnknownKeys = true }
 
             mRetrofit = Retrofit.Builder()

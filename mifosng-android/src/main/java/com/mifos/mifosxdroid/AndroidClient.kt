@@ -12,20 +12,30 @@ package com.mifos.mifosxdroid
 import android.content.Context
 import android.graphics.Typeface
 import android.os.StrictMode
+
 import androidx.multidex.MultiDexApplication
 import com.mifos.core.common.utils.LanguageHelper
+import com.mifos.core.data.services.extend.ExtensionInitializer
 import com.raizlabs.android.dbflow.config.FlowConfig
 import com.raizlabs.android.dbflow.config.FlowManager
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 /**
  * Created by ishankhanna on 13/03/15.
  */
 @HiltAndroidApp
 class AndroidClient : MultiDexApplication() {
+    
+    @Inject
+    lateinit var extensionInitializer: ExtensionInitializer
+    
+    private var extensionsInitialized = false
+    
     override fun onCreate() {
         super.onCreate()
 
+        println("🚀 AndroidClient: onCreate started")
         instance = this
         // Initializing the DBFlow and SQL Cipher Encryption
         FlowManager.init(FlowConfig.Builder(this).build())
@@ -33,6 +43,25 @@ class AndroidClient : MultiDexApplication() {
             .detectFileUriExposure()
             .build()
         StrictMode.setVmPolicy(policy)
+        
+        println("🚀 AndroidClient: onCreate completed - extensions will be initialized lazily")
+    }
+    
+    /**
+     * Initialize extensions when first needed (after DI is ready)
+     */
+    fun ensureExtensionsInitialized() {
+        if (!extensionsInitialized) {
+            println("🚀 AndroidClient: Initializing extension system lazily...")
+            try {
+                extensionInitializer.initialize()
+                extensionsInitialized = true
+                println("✅ AndroidClient: Extension system initialized successfully")
+            } catch (e: Exception) {
+                println("❌ AndroidClient: Extension system initialization failed - ${e.message}")
+                e.printStackTrace()
+            }
+        }
     }
 
     override fun attachBaseContext(base: Context) {

@@ -110,6 +110,9 @@ import com.mifos.core.objects.accounts.loan.LoanAccount
 import com.mifos.core.objects.accounts.savings.DepositType
 import com.mifos.core.objects.accounts.savings.SavingsAccount
 import com.mifos.feature.client.R
+import com.mifos.feature.client.extend.kyc.ui.ClientKycDisplay
+import com.mifos.feature.client.extend.ClientMenuExtension
+import com.mifos.feature.client.extend.ClientMenuExtensions
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Objects
@@ -134,6 +137,9 @@ internal fun ClientDetailsScreen(
     loanAccountSelected: (Int) -> Unit,
     savingsAccountSelected: (Int, DepositType) -> Unit,
     activateClient: (Int) -> Unit,
+    extensions: Set<ClientMenuExtension> = emptySet(),
+    onExtensionMenuClick: (String, Int) -> Unit = { _, _ -> },
+    onNavigateToKyc: (String, Int) -> Unit = { _, _ -> },
     clientDetailsViewModel: ClientDetailsViewModel = hiltViewModel(),
 ) {
     val clientId by clientDetailsViewModel.clientId.collectAsStateWithLifecycle()
@@ -306,6 +312,16 @@ internal fun ClientDetailsScreen(
                         showMenu = false
                     },
                 )
+
+                // Extension hook - allows adding custom menu items with minimal upstream changes
+                ClientMenuExtensions(
+                    clientId = clientId,
+                    extensions = extensions,
+                    onMenuClick = { route, id ->
+                        onExtensionMenuClick(route, id)
+                        showMenu = false
+                    },
+                )
             }
         },
         snackbarHostState = snackbarHostState,
@@ -375,6 +391,7 @@ internal fun ClientDetailsScreen(
                     padding = padding,
                     loanAccountSelected = loanAccountSelected,
                     savingsAccountSelected = savingsAccountSelected,
+                    onNavigateToKyc = onNavigateToKyc,
                 )
             }
         }
@@ -386,6 +403,7 @@ private fun MifosClientDetailsScreen(
     loanAccountSelected: (Int) -> Unit,
     padding: PaddingValues,
     savingsAccountSelected: (Int, DepositType) -> Unit,
+    onNavigateToKyc: (String, Int) -> Unit,
     clientDetailsViewModel: ClientDetailsViewModel = hiltViewModel(),
 ) {
     val client = clientDetailsViewModel.client.collectAsStateWithLifecycle().value
@@ -485,6 +503,15 @@ private fun MifosClientDetailsScreen(
                 value = it,
             )
         }
+        
+        // KYC Information Display - Extension hook with minimal upstream changes
+        client?.id?.let { clientId ->
+            ClientKycDisplay(
+                clientId = clientId,
+                onNavigateToGuarantorKyc = { id -> onNavigateToKyc("guarantor_kyc", id) }
+            )
+        }
+        
         Spacer(modifier = Modifier.height(20.dp))
         if (loanAccounts != null && savingsAccounts != null) {
             Text(
